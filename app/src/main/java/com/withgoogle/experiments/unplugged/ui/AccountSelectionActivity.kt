@@ -40,8 +40,8 @@ class AccountSelectionActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == ACCOUNT_REQUEST && resultCode == Activity.RESULT_OK) {
             data?.let {
-                val accountName = it.getStringExtra(AccountManager.KEY_ACCOUNT_NAME)
-                val accountType = it.getStringExtra(AccountManager.KEY_ACCOUNT_TYPE)
+                val accountName = it.getStringExtra(AccountManager.KEY_ACCOUNT_NAME) ?: ""
+                val accountType = it.getStringExtra(AccountManager.KEY_ACCOUNT_TYPE) ?: ""
 
                 AppState.account.value = Account(accountName, accountType)
                 accountPreference.set("$accountName|$accountType")

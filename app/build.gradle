@@ -9,31 +9,47 @@ apply plugin: 'kotlin-kapt'
 apply plugin: 'org.jlleitschuh.gradle.ktlint'
 
 android {
-    compileSdkVersion 28
+    namespace 'com.withgoogle.experiments.unplugged'
+    compileSdk 35
 
     def keys = new Properties()
-    file("../keys.properties").withInputStream {
-        stream -> keys.load(stream)
+    def localPropertiesFile = file("../local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.withInputStream { stream -> keys.load(stream) }
     }
 
     defaultConfig {
         applicationId "com.withgoogle.experiments.unplugged"
         minSdkVersion 26
-        targetSdkVersion 28
+        targetSdk 35
         versionCode versionMajor * 1000000 + versionMinor * 10000 + versionPatch * 100 + versionBuild
         versionName "${versionMajor}.${versionMinor}.${versionPatch}"
 
-        buildConfigField "String", "GMAPS_API_KEY", "\"" + keys.GMAPS_API_KEY + "\""
-        buildConfigField "String", "WEATHER_APP_ID", "\"" + keys.WEATHER_APP_ID + "\""
-        buildConfigField "String", "PLACES_API_KEY", "\"" + keys.PLACES_API_KEY + "\""
+        buildConfigField "String", "GMAPS_API_KEY", "\"" + (keys.getProperty("GMAPS_API_KEY") ?: "") + "\""
+        buildConfigField "String", "WEATHER_APP_ID", "\"" + (keys.getProperty("WEATHER_APP_ID") ?: "") + "\""
+        buildConfigField "String", "PLACES_API_KEY", "\"" + (keys.getProperty("PLACES_API_KEY") ?: "") + "\""
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
     }
 
     signingConfigs {
         paperPhone {
-            storeFile file(keys.storeFile)
-            storePassword keys.storePassword
-            keyAlias keys.keyAlias
-            keyPassword keys.keyPassword
+            def storeFilePath = keys.getProperty("storeFile") ?: "keystore.jks"
+            storeFile file(storeFilePath)
+            storePassword keys.getProperty("storePassword") ?: "password"
+            keyAlias keys.getProperty("keyAlias") ?: "alias"
+            keyPassword keys.getProperty("keyPassword") ?: "password"
         }
     }
 
@@ -54,36 +70,38 @@ android {
         exclude 'META-INF/NOTICE.txt'
         exclude 'META-INF/notice.txt'
         exclude 'META-INF/ASL2.0'
+        exclude 'META-INF/INDEX.LIST'
     }
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.1.1"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1"
 
-    implementation 'androidx.appcompat:appcompat:1.0.2'
-    implementation 'androidx.fragment:fragment-ktx:1.0.0'
-    implementation 'androidx.core:core-ktx:1.0.2'
-    implementation 'androidx.recyclerview:recyclerview:1.0.0'
-    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.fragment:fragment-ktx:1.8.1'
+    implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'androidx.recyclerview:recyclerview:1.3.2'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.activity:activity-ktx:1.9.0'
 
     implementation "androidx.room:room-runtime:$room_version"
     implementation "androidx.room:room-ktx:$room_version"
     kapt "androidx.room:room-compiler:$room_version"
 
-    implementation "androidx.lifecycle:lifecycle-extensions:$lifecycle_version"
-    kapt "androidx.lifecycle:lifecycle-compiler:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycle_version"
 
-    implementation 'com.jakewharton.timber:timber:4.7.1'
+    implementation 'com.jakewharton.timber:timber:5.0.1'
 
-    implementation 'com.google.apis:google-api-services-tasks:v1-rev20190628-1.30.1'
-    implementation 'com.google.android.gms:play-services-location:15.0.1'
-    implementation 'com.google.android.libraries.places:places:2.0.0'
+    implementation 'com.google.apis:google-api-services-tasks:v1-rev20250518-2.0.0'
+    implementation 'com.google.android.gms:play-services-location:21.3.0'
+    implementation 'com.google.android.libraries.places:places:3.5.0'
 
-    implementation 'com.airbnb.android:lottie:3.0.1'
+    implementation 'com.airbnb.android:lottie:6.4.1'
 
-    implementation 'com.google.code.gson:gson:2.8.5'
+    implementation 'com.google.code.gson:gson:2.11.0'
     implementation "com.squareup.okhttp3:okhttp:${okhttp_version}"
     implementation "com.squareup.okhttp3:logging-interceptor:${okhttp_version}"
 }

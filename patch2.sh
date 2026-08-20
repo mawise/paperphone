@@ -1,0 +1,1 @@
+sed -i 's/private fun requestPermissionRationale(title: Int, rationaleRes: Int) {/private fun requestPermissionRationale(title: Int, rationaleRes: Int, requestCode: Int) {/g' app/src/main/java/com/withgoogle/experiments/unplugged/ui/HomeActivity.kt
