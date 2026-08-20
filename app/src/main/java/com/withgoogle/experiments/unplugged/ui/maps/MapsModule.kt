@@ -58,7 +58,8 @@ class MapsModule(val context: Context, val origin: Location, val destination: Lo
         val response = GoogleHttpClient.okHttpClient.newCall(request).execute()
 
         return if (response.isSuccessful) {
-            BitmapFactory.decodeStream(response.body()?.byteStream())
+            val body = response.body
+            BitmapFactory.decodeStream(body?.byteStream())
         } else {
             null
         }

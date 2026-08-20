@@ -20,7 +20,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
 import com.google.api.services.tasks.TasksScopes
 import com.withgoogle.experiments.unplugged.PaperPhoneApp
 import com.withgoogle.experiments.unplugged.R
@@ -65,6 +65,37 @@ class HomeActivity : AppCompatActivity() {
     private val PERMISSION_LOCATION_REQUEST = 0x6
     private val PERMISSION_LOCATION_REQUEST_WEATHER = 0x7
 
+    private val requestCalendarPermissionLauncher =
+        registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                startActivity(Intent(this, CalendarSelectorActivity::class.java))
+            }
+        }
+    private val requestContactsPermissionLauncher =
+        registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                startActivity(Intent(this, ContactListActivity::class.java))
+            }
+        }
+    private val requestPhotosPermissionLauncher =
+        registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                startActivity(Intent(this, PhotosActivity::class.java))
+            }
+        }
+    private val requestMapsPermissionLauncher =
+        registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true || permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
+                startActivity(Intent(this, MapsActivity::class.java))
+            }
+        }
+    private val requestWeatherPermissionLauncher =
+        registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true || permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
+                startActivity(Intent(this, WeatherList::class.java))
+            }
+        }
+
     private val calendarView by bindView<ModuleView>(R.id.calendar)
     private val contactsView by bindView<ModuleView>(R.id.contacts)
     private val mapsView by bindView<ModuleView>(R.id.maps)
@@ -83,7 +114,7 @@ class HomeActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        homeViewModel = ViewModelProviders.of(this).get(HomeViewModel::class.java)
+        homeViewModel = ViewModelProvider(this).get(HomeViewModel::class.java)
 
         homeViewModel.allContacts.observe(this, Observer {
             contacts.clear()
@@ -180,15 +211,13 @@ class HomeActivity : AppCompatActivity() {
         } else {
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.ACCESS_FINE_LOCATION)) {
-                requestPermissionRationale(R.string.item_weather, R.string.location_permission_rationale)
+                requestPermissionRationale(R.string.item_weather, R.string.location_permission_rationale, PERMISSION_LOCATION_REQUEST_WEATHER)
             } else {
-                ActivityCompat.requestPermissions(
-                    this,
+                requestWeatherPermissionLauncher.launch(
                     arrayOf(
                         Manifest.permission.ACCESS_FINE_LOCATION,
                         Manifest.permission.ACCESS_COARSE_LOCATION
-                    ),
-                    PERMISSION_LOCATION_REQUEST_WEATHER
+                    )
                 )
             }
         }
@@ -200,12 +229,10 @@ class HomeActivity : AppCompatActivity() {
         } else {
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.ACCESS_FINE_LOCATION)) {
-                requestPermissionRationale(R.string.item_maps, R.string.location_permission_rationale)
+                requestPermissionRationale(R.string.item_maps, R.string.location_permission_rationale, PERMISSION_LOCATION_REQUEST)
             } else {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
-                    PERMISSION_LOCATION_REQUEST
+                requestMapsPermissionLauncher.launch(
+                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
                 )
             }
         }
@@ -217,22 +244,20 @@ class HomeActivity : AppCompatActivity() {
         } else {
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.READ_EXTERNAL_STORAGE)) {
-                requestPermissionRationale(R.string.item_photos, R.string.storage_permission_rationale)
+                requestPermissionRationale(R.string.item_photos, R.string.storage_permission_rationale, PERMISSION_READ_EXTERNAL_STORAGE_REQUEST)
             } else {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                    PERMISSION_READ_EXTERNAL_STORAGE_REQUEST
-                )
+                requestPhotosPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
             }
         }
     }
 
-    private fun requestPermissionRationale(title: Int, rationaleRes: Int) {
-        startActivity(Intent(this, PermissionActivity::class.java).apply {
+    private fun requestPermissionRationale(title: Int, rationaleRes: Int, requestCode: Int) {
+        val intent = Intent(this, PermissionActivity::class.java).apply {
             putExtra("title_res", title)
             putExtra("rationale_res", rationaleRes)
-        })
+            putExtra("request_code", requestCode)
+        }
+        startActivityForResult(intent, requestCode)
     }
 
     private fun contactsPick() {
@@ -241,11 +266,9 @@ class HomeActivity : AppCompatActivity() {
 
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.READ_CONTACTS)) {
-                requestPermissionRationale(R.string.item_contacts, R.string.contacts_permission_rationale)
+                requestPermissionRationale(R.string.item_contacts, R.string.contacts_permission_rationale, PERMISSION_READ_CONTACTS_REQUEST)
             } else {
-                ActivityCompat.requestPermissions(this,
-                    arrayOf(Manifest.permission.READ_CONTACTS),
-                    PERMISSION_READ_CONTACTS_REQUEST)
+                requestContactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
             }
         } else {
             startActivity(Intent(this, ContactListActivity::class.java))
@@ -258,54 +281,15 @@ class HomeActivity : AppCompatActivity() {
 
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.READ_CALENDAR)) {
-                requestPermissionRationale(R.string.item_calendar, R.string.calendar_permission_rationale)
+                requestPermissionRationale(R.string.item_calendar, R.string.calendar_permission_rationale, PERMISSION_READ_CALENDAR_REQUEST)
             } else {
-                ActivityCompat.requestPermissions(this,
-                    arrayOf(Manifest.permission.READ_CALENDAR),
-                    PERMISSION_READ_CALENDAR_REQUEST)
+                requestCalendarPermissionLauncher.launch(Manifest.permission.READ_CALENDAR)
             }
         } else {
             startActivity(Intent(this, CalendarSelectorActivity::class.java))
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        when (requestCode) {
-            PERMISSION_READ_CALENDAR_REQUEST -> {
-                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    startActivity(Intent(this, CalendarSelectorActivity::class.java))
-                }
-                return
-            }
-
-            PERMISSION_READ_CONTACTS_REQUEST -> {
-                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    startActivity(Intent(this, ContactListActivity::class.java))
-                }
-                return
-            }
-            PERMISSION_READ_EXTERNAL_STORAGE_REQUEST -> {
-                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    startActivity(Intent(this, PhotosActivity::class.java))
-                }
-                return
-            }
-            PERMISSION_LOCATION_REQUEST -> {
-                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    startActivity(Intent(this, MapsActivity::class.java))
-                }
-                return
-            }
-            PERMISSION_LOCATION_REQUEST_WEATHER -> {
-                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    startActivity(Intent(this, WeatherList::class.java))
-                }
-                return
-            }
-
-            else -> super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        }
-    }
 
     private fun setupStateObservers() {
         AppState.account.observe(this, Observer { account ->
@@ -369,13 +353,23 @@ class HomeActivity : AppCompatActivity() {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == ACCOUNT_REQUEST && resultCode == Activity.RESULT_OK) {
-            data?.let {
-                val accountName = it.getStringExtra(AccountManager.KEY_ACCOUNT_NAME)
-                val accountType = it.getStringExtra(AccountManager.KEY_ACCOUNT_TYPE)
+        if (resultCode == Activity.RESULT_OK) {
+            when (requestCode) {
+                ACCOUNT_REQUEST -> {
+                    data?.let {
+                        val accountName = it.getStringExtra(AccountManager.KEY_ACCOUNT_NAME) ?: ""
+                        val accountType = it.getStringExtra(AccountManager.KEY_ACCOUNT_TYPE) ?: ""
 
-                AppState.account.value = Account(accountName, accountType)
-                PaperPhoneApp.obtain(this).accountPreference.set("$accountName|$accountType")
+                        AppState.account.value = Account(accountName, accountType)
+                        PaperPhoneApp.obtain(this).accountPreference.set("$accountName|$accountType")
+                    }
+                }
+                PERMISSION_READ_CALENDAR_REQUEST -> requestCalendarPermissionLauncher.launch(Manifest.permission.READ_CALENDAR)
+                PERMISSION_READ_CONTACTS_REQUEST -> requestContactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                PERMISSION_READ_EXTERNAL_STORAGE_REQUEST -> requestPhotosPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+                PERMISSION_LOCATION_REQUEST -> requestMapsPermissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                PERMISSION_LOCATION_REQUEST_WEATHER -> requestWeatherPermissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                else -> super.onActivityResult(requestCode, resultCode, data)
             }
         } else {
             super.onActivityResult(requestCode, resultCode, data)

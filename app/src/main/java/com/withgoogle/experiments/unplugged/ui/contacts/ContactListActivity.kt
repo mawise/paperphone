@@ -18,7 +18,7 @@ import android.graphics.Color
 import android.view.View
 import androidx.core.content.res.ResourcesCompat
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
 import com.withgoogle.experiments.unplugged.util.bindView
 
 class ContactListActivity: AppCompatActivity() {
@@ -40,7 +40,7 @@ class ContactListActivity: AppCompatActivity() {
         moduleView.setText("C", "Contacts")
         moduleView.isChecked = true
 
-        contactsViewModel = ViewModelProviders.of(this).get(ContactsViewModel::class.java)
+        contactsViewModel = ViewModelProvider(this).get(ContactsViewModel::class.java)
 
         addView.setOnClickListener {
             val contactPickerIntent = Intent(

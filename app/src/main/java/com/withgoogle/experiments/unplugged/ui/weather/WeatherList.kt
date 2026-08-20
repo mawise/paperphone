@@ -65,13 +65,16 @@ class WeatherList: AppCompatActivity() {
     }
 
     private val locationCallback = object : LocationCallback() {
-        override fun onLocationResult(locationResult: LocationResult?) {
-            locationResult ?: return
+        override fun onLocationResult(locationResult: LocationResult) {
+            locationResult.let {
             for (location in locationResult.locations){
                 Timber.d(location.toString())
             }
 
-            reverseGeocode(locationResult.locations[0].latitude, locationResult.locations[0].longitude)
+            if (locationResult.locations.isEmpty()) return
+            val location = locationResult.locations[0]
+            reverseGeocode(location.latitude, location.longitude)
+            }
         }
     }
 
@@ -100,7 +103,7 @@ class WeatherList: AppCompatActivity() {
             val forecasts = withContext(Dispatchers.IO) {
                 val geocoder = Geocoder(this@WeatherList)
 
-                var addresses: List<Address> = emptyList()
+                var addresses: List<Address>? = emptyList()
                 try {
                     addresses = geocoder.getFromLocation(latitude, longitude, 1)
                 } catch (ioException: IOException) {
@@ -109,7 +112,7 @@ class WeatherList: AppCompatActivity() {
                     Timber.e(illegalArgumentException,"Invalid latitude/longitude")
                 }
 
-                if (addresses.isEmpty()) {
+                if (addresses.isNullOrEmpty()) {
                     emptyList()
                 } else {
                     val address = addresses[0]

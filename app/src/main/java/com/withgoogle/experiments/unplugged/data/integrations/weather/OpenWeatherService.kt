@@ -6,7 +6,7 @@ import com.withgoogle.experiments.unplugged.R
 import com.withgoogle.experiments.unplugged.data.integrations.maps.GoogleHttpClient
 import com.withgoogle.experiments.unplugged.model.ThreeHourForecast
 import com.withgoogle.experiments.unplugged.ui.AppState
-import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Request
 import timber.log.Timber
 import java.time.Instant
@@ -15,7 +15,7 @@ class OpenWeatherService {
    private val gson = Gson()
 
    fun forecast(city: String): List<ThreeHourForecast>? {
-      val url = HttpUrl.get("https://api.openweathermap.org/data/2.5/forecast")
+      val url = "https://api.openweathermap.org/data/2.5/forecast".toHttpUrlOrNull()!!
 
       val finalUrl = url.newBuilder()
          .addEncodedQueryParameter("q", city)
@@ -30,8 +30,9 @@ class OpenWeatherService {
       val response = GoogleHttpClient.okHttpClient.newCall(request).execute()
 
       return if (response.isSuccessful) {
-         response.body()?.use {
-            val result = gson.fromJson(response.body()?.charStream(), ForecastResult::class.java)
+         val body = response.body
+         body?.use {
+            val result = gson.fromJson(body.charStream(), ForecastResult::class.java)
 
             return result.list.filter {
                !it.dt_txt.endsWith("03:00:00") and

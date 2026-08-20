@@ -3,7 +3,7 @@ package com.withgoogle.experiments.unplugged.data.integrations.maps
 import com.google.gson.Gson
 import com.withgoogle.experiments.unplugged.BuildConfig
 import com.withgoogle.experiments.unplugged.model.Location
-import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Request
 import timber.log.Timber
 
@@ -11,7 +11,7 @@ class GoogleDirections {
     private val gson = Gson()
 
     fun directionEncodedPath(origin: Location, destination: Location): String? {
-        val url = HttpUrl.get("https://maps.googleapis.com/maps/api/directions/json")
+        val url = "https://maps.googleapis.com/maps/api/directions/json".toHttpUrlOrNull()!!
 
         val finalUrl = url.newBuilder()
             .addEncodedQueryParameter("origin", origin.toString())
@@ -27,10 +27,11 @@ class GoogleDirections {
         val response = GoogleHttpClient.okHttpClient.newCall(request).execute()
 
         return if (response.isSuccessful) {
-            response.body()?.use {
+            val body = response.body
+            body?.use {
                 val result = gson.fromJson(it.charStream(), Result::class.java)
 
-                val staticMapUrl = HttpUrl.get("https://maps.googleapis.com/maps/api/staticmap")
+                val staticMapUrl = "https://maps.googleapis.com/maps/api/staticmap".toHttpUrlOrNull()!!
 
                 val mapBuilder = staticMapUrl.newBuilder()
                     .addEncodedQueryParameter("size", "494x494")

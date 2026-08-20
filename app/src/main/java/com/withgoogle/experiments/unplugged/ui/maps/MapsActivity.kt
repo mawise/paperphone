@@ -90,12 +90,13 @@ class MapsActivity: AppCompatActivity() {
     }
 
     private val locationCallback = object : LocationCallback() {
-        override fun onLocationResult(locationResult: LocationResult?) {
-            locationResult ?: return
+        override fun onLocationResult(locationResult: LocationResult) {
+            locationResult.let {
             for (location in locationResult.locations){
                 Timber.d(location.toString())
             }
 
+            if (locationResult.locations.isEmpty()) return
             val location = locationResult.locations[0]
 
             if (AppState.origin.value == null) {
@@ -106,6 +107,7 @@ class MapsActivity: AppCompatActivity() {
                 reverseGeocode(it.latitude, it.longitude, originView)
             }
         }
+    }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -142,7 +144,7 @@ class MapsActivity: AppCompatActivity() {
             val address = withContext(Dispatchers.IO) {
                 val geocoder = Geocoder(this@MapsActivity)
 
-                var addresses: List<Address> = emptyList()
+                var addresses: List<Address>? = emptyList()
                 try {
                     addresses = geocoder.getFromLocation(latitude, longitude, 1)
                 } catch (ioException: IOException) {
@@ -151,13 +153,13 @@ class MapsActivity: AppCompatActivity() {
                     Timber.e(illegalArgumentException, "Invalid latitude/longitude")
                 }
 
-                if (addresses.isEmpty()) {
+                if (addresses.isNullOrEmpty()) {
                     emptyList()
                 } else {
                     addresses
                 }
 
-            }.firstOrNull()
+            }?.firstOrNull()
 
             address?.let {
                 target.text = it.getAddressLine(0)

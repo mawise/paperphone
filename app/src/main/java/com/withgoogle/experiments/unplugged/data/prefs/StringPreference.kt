@@ -6,7 +6,7 @@ class StringPreference(private val preferences: SharedPreferences,
     private val key: String, private val defaultValue: String = "") {
 
     fun get(): String {
-        return preferences.getString(key, defaultValue)
+        return preferences.getString(key, defaultValue) ?: defaultValue
     }
 
     val isSet: Boolean
